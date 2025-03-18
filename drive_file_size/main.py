@@ -4,6 +4,10 @@ import datetime as dt
 
 now = dt.datetime.now().strftime('%Y%m%d-%H%M')
 
+drive_to_search_path = r'M:\BA DATA\US_2024'
+files_output_path = fr'D:\tstone_temp\z_drive_file_size_files\Drive_Files_{now}.csv'
+folders_output_path = fr'D:\tstone_temp\z_drive_file_size_files\Drive_Folders_{now}.csv'
+
 def get_file_and_folder_sizes(drive_path):
     file_info = []
     folder_size = {}
@@ -44,9 +48,9 @@ def get_file_and_folder_sizes(drive_path):
     return sorted_file_info_df, sorted_folder_size_df
 
 # Replace 'your/drive/path' with the actual path to the drive you want to scan
-drive_path = r'M:\BA DATA\US_2024'
+drive_path = drive_to_search_path
 sorted_files_df, sorted_folders_df = get_file_and_folder_sizes(drive_path)
 
 # Save the dataframes to CSV files
-sorted_files_df.to_csv(fr"D:\tstone_temp\z_drive_file_size_files\Drive_Files_{now}.csv", index=False)
-sorted_folders_df.to_csv(fr"D:\tstone_temp\z_drive_file_size_files\Drive_Folders_{now}.csv", index=False)
+sorted_files_df.to_csv(files_output_path, index=False)
+sorted_folders_df.to_csv(folders_output_path, index=False)
