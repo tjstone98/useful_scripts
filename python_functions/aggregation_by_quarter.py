@@ -30,7 +30,9 @@ def group_by_quarter(df, agg_type):
         for quarter in ['Q1', 'Q2', 'Q3', 'Q4']:
             quarter_cols = [col for col in year_cols if col[4:6] in month_to_quarter_dict and month_to_quarter_dict[col[4:6]] == quarter]
 
-            if quarter_cols:
+            if len(quarter_cols) > 3:
+                raise Exception(f'{len(quarter_cols)} columns returned for {year}-{quarter}. Please review.')
+            elif quarter_cols:
                 quarter_col_name = f'{year}{quarter}'
 
                 if agg_type == 'sum':
