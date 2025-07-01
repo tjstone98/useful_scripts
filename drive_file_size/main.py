@@ -4,9 +4,9 @@ import datetime as dt
 
 now = dt.datetime.now().strftime('%Y%m%d-%H%M')
 
-drive_to_search_path = r'M:\BA DATA\US_2024'
-files_output_path = fr'D:\tstone_temp\z_drive_file_size_files\Drive_Files_{now}.csv'
-folders_output_path = fr'D:\tstone_temp\z_drive_file_size_files\Drive_Folders_{now}.csv'
+drive_to_search_path = r''
+files_output_path = fr''
+folders_output_path = fr''
 
 def get_file_and_folder_sizes(drive_path):
     file_info = []
