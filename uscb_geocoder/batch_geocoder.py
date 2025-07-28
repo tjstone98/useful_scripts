@@ -1,5 +1,6 @@
 import requests, io, csv, os
 import pandas as pd
+import datetime as dt
 
 pd.set_option('display.max_columns', None)
 
@@ -7,40 +8,36 @@ input_file = r''
 output_dir = r''
 os.makedirs(output_dir, exist_ok=True)
 
+df_for_uscb = df[['ID', 'ADDR', 'CITY', 'STATE', 'ZIP']]
+
+now = dt.datetime.now().strftime('%Y%m%d%H%M%S')
+df_for_uscb.to_csv(input_file, index=False, encoding='utf-8')
+
 chunk_size = 9999
 chunk_num = 1
 
-geocoded_dfs = []
+all_rows = []
+
+url = 'https://geocoding.geo.census.gov/geocoder/geographies/addressbatch'
+payload = {'benchmark':'Public_AR_Current', 'vintage':'Current_Current'}
 
 # Read and chunk the CSV file with error handling for encoding
 for chunk in pd.read_csv(input_file, chunksize=chunk_size):
     # Save each chunk to a new CSV file
-    chunk_filename = os.path.join(output_dir, f'test_data_chunk_{chunk_num}.csv')
+    chunk_filename = os.path.join(output_dir, f'temp_chunk_{chunk_num}.csv')
     chunk.to_csv(chunk_filename, index=False)
 
-    # Send the chunk to the geocoder
-    files = {'addressFile': (chunk_filename, open(chunk_filename, 'rb'), 'text/csv')}
-    response = requests.post(url, files=files, data=payload)
-
-    # Read the response into a DataFrame
-    geocoded_chunk = pd.read_csv(io.StringIO(response.text), sep=',', header=None, quoting=csv.QUOTE_ALL)
-    geocoded_chunk.columns = ['in_id', 'in_address', 'match_flag', 'match_type', 'match_address', 'match_coords', 
-                              'match_tiger_edge', 'match_street_side', 'match_state_fips', 'match_county_fips', 
-                              'match_tract_fips', 'match_block_fips']
+    with open(chunk_filename, 'rb') as f:
+        files = {'addressFile': (chunk_filename, f, 'text/csv')}
+        response = requests.post(url, files=files, data=payload, verify=certifi.where())
+        reader = csv.reader(io.StringIO(response.text))
+        rows = list(reader)
 
     # Add the geocoded chunk to the list
-    geocoded_dfs.append(geocoded_chunk)
+    all_rows.extend(rows)
     print(f'{chunk_num} completed.')
     chunk_num += 1
 
-# Concatenate all geocoded DataFrames
-df = pd.concat(geocoded_dfs, ignore_index=True)
-# Ensure the FIPS codes are strings and pad with leading zeros
-df['match_state_fips'] = df['match_state_fips'].astype(str).str[:-2].str.zfill(2)
-df['match_county_fips'] = df['match_county_fips'].astype(str).str[:-2].str.zfill(3)
-df['match_tract_fips'] = df['match_tract_fips'].astype(str).str[:-2].str.zfill(6)
-df['match_block_fips'] = df['match_block_fips'].astype(str).str[:-2].str.zfill(4)
-
-# Combine the FIPS codes into one ID
-df['combined_fips'] = df['match_state_fips'] + df['match_county_fips'] + df['match_tract_fips'] + df['match_block_fips'].str[0]
+uscb_geocoded = pd.DataFrame(all_rows, columns=['GUID', 'in_addr', 'match_flag', 'match_type', 'out_addr', 'out_xy', 'out_tiger_edge', 'out_street_side', 'out_state_fips', 'out_county_fips', 'out_tract_fips', 'out_block_fips'])
+print(uscb_geocoded['match_type'].value_counts())
 df.to_csv('', index=False)
